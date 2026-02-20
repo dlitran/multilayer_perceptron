@@ -57,12 +57,12 @@ def create_scatter_plot(df):
 
 def main():
     df = load_data()
-    # general_description(df)
+    general_description(df)
 
     
     # create_bar_plot(df)
     #Scatter plot
-    create_scatter_plot(df)
+    # create_scatter_plot(df)
     #pair plot
 
 
