@@ -3,6 +3,20 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+class neuronalNetwork:
+    """docstring"""
+    def __init__(self, numberVariablesInput, X, Y, numberDataPoints, learningRate=0.005):
+        """constructor"""
+        numberVariablesInput = numberVariablesInput
+        X = X
+        Y = Y
+        learningRate = learningRate
+        numberDataPoints = numberDataPoints
+        layers = [initialize_ReLU_layer(numberVariablesInput, 64), initialize_ReLU_layer(64, 32), initialize_ReLU_layer(32, 16)] #initialize randomly following a specific method for ReLU.
+        biases = [initialize_bias(numberDataPoints, 64), initialize_bias(numberDataPoints, 32), initialize_bias(numberDataPoints, 16)] 
+        activationFunctionOutput = []
+        inputArray = []
+    
 def load_data() -> pd.DataFrame:
     """docstring for function: loads data"""
     columnNames = ["id", "diagnosis", "radius", "texture", "perimeter", "area", "smoothness", "compacteness", 
@@ -25,11 +39,10 @@ def initialize_ReLU_layer(numberInputs: int, numberOutputs: int) -> np.ndarray:
 
 def initialize_logistic_layer(numberInputs: int, numberOutputs: int) -> np.ndarray:
     var = np.sqrt(2.0/(numberInputs + numberOutputs)) #Xavier initialization (16 del input y 1 del output.)
-    weightsFinalNeuron = np.random.normal(loc=0.0, scale=var, size=numberInputs)
+    weightsFinalNeuron = np.random.normal(loc=0.0, scale=var, size=(numberInputs, numberOutputs))
     return weightsFinalNeuron
 
 def initialize_bias(numberDataPoints: int, numberOutputs: int) -> np.ndarray: #I believe that instead of number inputs I shouldput the number of datapoints use to train the model
-
     # Create a single random row and tile it
     bias = np.zeros(numberOutputs)
     # bias = np.tile(base_row, (numberDataPoints, 1))
@@ -44,25 +57,16 @@ def numeralize_diagnosis(diagnosis: str) -> float:
     elif diagnosis == 'B':
         return 0.
 
-def main():
-    learningRate = 0.005
-    df = load_data()
-    N = len(df.drop(["diagnosis"], axis=1).columns)
-    Y = np.array(df["diagnosis"])
-    vectorized_num = np.vectorize(numeralize_diagnosis)
-    Y = vectorized_num(Y)
-    # X = pd.DataFrame(df.drop(["diagnosis"], axis=1))
-    layer_size = [N, 64, 32, 1]
-    layers = [initialize_ReLU_layer(N, 64), initialize_ReLU_layer(64, 32), initialize_ReLU_layer(32, 16)] #initialize randomly following a specific method for ReLU.
+def derivative_ReLU(x: float) -> float:
+    if x > 0:
+        return 1
+    else:
+        return 0
 
-    numberDataPoints = 569 #Batch gradient descent.
-    biases = [initialize_bias(numberDataPoints, 64), initialize_bias(numberDataPoints, 32), initialize_bias(numberDataPoints, 16)] 
-
-
+def forward_pass(layers, biases, inputArray, numberDataPoints, activationFunctionOutput, input) -> [np.ndarray, np.ndarray, np.ndarray]:
     vectorized_ReLU = np.vectorize(ReLU)
-    X = df.drop(["diagnosis"], axis=1).to_numpy()
-    input = (X - X.mean()) / X.var()
     for layer, bias in zip(layers, biases):
+        inputArray.append(input)
         multiplied = multiplication(input, layer)
         added = multiplied + bias
 
@@ -70,7 +74,7 @@ def main():
         # if len(added[0]) == 16:
         #     print(added[0])
         signal = vectorized_ReLU(added)
-
+        activationFunctionOutput.append(signal)
         input = signal
     #logistic regression:
     weightsFinalNeuron = initialize_logistic_layer(16, 1) 
@@ -81,53 +85,60 @@ def main():
     # print(weightSum)
     clipped = np.clip(weightSum, -500, 500)
     p = 1 /(1 + np.exp(-clipped))
-    print(p)
-    #input here is the last weight (or weights)
-    #We want the derivative of the weighted sum with respect to the weights
-    #derivative of the activation functionn with respect the the weighted sum
-    #derivative of the Loss function respect the activation function
-    #This gives us the gradient.
-    # print(Y)
-    # print(input)
+    return p, weightsFinalNeuron, input, biasFinalNeuron
+
+def main():
+    df = load_data()
+
+    Y = np.array(df["diagnosis"])
+    vectorized_num = np.vectorize(numeralize_diagnosis)
+    Y = vectorized_num(Y)
+
+    X = df.drop(["diagnosis"], axis=1)
+    numberVariablesInput = len(X.columns)
+    X = X.to_numpy()
+    input = (X - X.mean()) / X.var()
+
+    learningRate = 0.005
+    numberDataPoints = 569 #Batch gradient descent.
+    layer_size = [numberVariablesInput, 64, 32, 1]
+
+    activationFunctionOutput = []
+    inputArray = []
+
+    layers = [initialize_ReLU_layer(numberVariablesInput, 64), initialize_ReLU_layer(64, 32), initialize_ReLU_layer(32, 16)] #initialize randomly following a specific method for ReLU.
+    biases = [initialize_bias(numberDataPoints, 64), initialize_bias(numberDataPoints, 32), initialize_bias(numberDataPoints, 16)] 
+
+    network = neuronalNetwork(numberVariablesInput, X, Y, numberDataPoints)
+
+    # for i in range(500):
+    p, weightsFinalNeuron, input, biasFinalNeuron = forward_pass(layers, biases, inputArray, numberDataPoints, activationFunctionOutput, input)
+    p = p.reshape(-1, 1)
+    Y = Y.reshape(-1, 1)
+
     dL_dA = Y - p
     dA_dz = p * (1 - p)
-    dz_dw = weightsFinalNeuron
+    delta = (dL_dA * dA_dz)
+    delta = delta.reshape(1, -1)
+    dz_dw = input
+    dL_dw = np.dot(delta, dz_dw) / N
+    dL_dw = dL_dw.reshape(-1, 1)
     dz_db = 1
-    weightsFinalNeuron = weightsFinalNeuron + learningRate * 
-    # print(dL)
-    # print(Error.mean())
-    # print(Error)
-    # print(input[0])
 
-    #Number of iteratrions
-    # for iter in range(500):
-        #caluclate derivatives
-        # gradient = Y
-        #Calculate the error (difference between )
-        #calculate gradient
-        #check
-    #backpropagation
-    # print(weights)
+    weightsFinalNeuron = weightsFinalNeuron - learningRate * dL_dw
+    biasFinalNeuron = biasFinalNeuron - learningRate * delta.mean() * dz_db 
+
+    vectorized_derivative = np.vectorize(derivative_ReLU)
+    for layer, bias, x, input in zip(layers, biases, activationFunctionOutput, inputArray):
+        dA_dz = vectorized_derivative(x)
+        dz_dw = input
+        dz_dw = dz_dw.T
+        delta = dL_dA * dA_dz
+        dL_dw = np.dot(dz_dw, delta)
+        print("dL_dw:", dz_dw.shape)
+        print("delta:", delta.shape)
+        layer = layer - learningRate * dL_dw
+        bias = bias - learningRate * delta.mean()
     
-
-
 if __name__ == "__main__":
     main()
-
-    #Neurons are just placeholders for the outputs of activation functions -> each column is a neuron.
-    #When training with just a datapoint we just have a value in each column. When we have more than one datapoint,
-    #we have more than one value in each column.
-
-    #Resum del més important:
-    #Imaginem que tenim el resultat de la predicció: a = 0.8
-    #El resultat real es y = 1.
-    #Volem calcular el gradient, vol dir -> direcció que disminueix L en funció de w.
-    #dL/dw = dL/da * da/dz * dz/dw
-    # L = 1/2(y - a)2
-    # dL/da = delta? = -(y - a)
-    #da/dz ->aquí ja anem enrere. hi ha una z per cada neurona de la capa anterior.
-    #La derivada depèn de la funció d'activació que estiguem utilitzant. -> obtenim un resultat per cada neurona de la capa anterior.
-    #dz/dw = wx -> x (on x son les a de la capa anterior' o el input.)
-    #En cas de que hi hagi una capa anterior ':
-    #multipliquem per da'/dz'
-    #multipiliquem per dz'/dw' -> x' on x' es l'input o prové de la capa anterior''.
