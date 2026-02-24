@@ -65,7 +65,7 @@ class Layer:
     initializeWeightsFunctions = {"ReLU" : initialize_ReLU_layer, "Logistic": initialize_logistic_layer}
     activationFunctions = {"ReLU" : np.vectorize(ReLU), "Logistic" : np.vectorize(logistic)}
     deltaCalculus = {"ReLU" : np.vectorize(derivative_ReLU), "Logistic" : np.vectorize(derivative_Logistic)}
-    learningRate = 0.005
+    learningRate = None
 
     def __init__(self, activationFunction, numberInputs, numberOutputs):
         self.weights = self.initializeWeightsFunctions[activationFunction](numberInputs, numberOutputs)
@@ -78,25 +78,30 @@ class Layer:
         self.inputLayer = None
     
     def actualizeWeights(self, lastDelta) -> np.ndarray:
-        delta = lastDelta * self.deltaCalculus(self.activationFunctionOutput)
+        dA_dz = self.deltaCalculus(self.activationFunctionOutput)
+        # print("lastDelta:", lastDelta.shape)
+        # print("dA_dz:", dA_dz.shape)
+        delta = np.dot(lastDelta, dA_dz.T)
+        # print("worked")
         
         dz_dw = self.inputLayer
         dz_dw = dz_dw.T
 
         dL_dw = np.dot(dz_dw, delta)
-        self.weights = layer - self.learningRate * dL_dw
+        self.weights = self.weights - self.learningRate * dL_dw
         self.bias = self.bias - self.learningRate * delta.mean()
         return delta
     
 class neuronalNetwork:
     """docstring"""
-    def __init__(self, numberVariablesInput, X, Y, numberDataPoints, layers):
+    def __init__(self, numberVariablesInput, X, Y, numberDataPoints, layers, learningRate):
         """constructor"""
         self.numberVariablesInput = numberVariablesInput
         self.X = X
         self.Y = Y
         self.numberDataPoints = numberDataPoints
         self.layers = layers
+        Layer.learningRate = learningRate
 
     def forwardPass(self):
         vectorized_ReLU = np.vectorize(ReLU)
@@ -111,29 +116,14 @@ class neuronalNetwork:
             input = signal
 
     def backpropagation(self):
-        delta = self.Y - self.layers[-1].activationFunctionOutput
-        for i, layer in enumerate(reversed(self.layers)):
-            self.layers[i].deltaCalculus(delta)
-
-
-# def forward_pass(network: neuronalNetwork) -> [np.ndarray, np.ndarray, np.ndarray]:
-#     vectorized_ReLU = np.vectorize(ReLU)
-#     for layer, bias in zip(network.layers, network.biases):
-#         network.inputArray.append(network.X)
-#         multiplied = multiplication(network.X, layer)
-#         added = multiplied + bias
-
-#         signal = vectorized_ReLU(added)
-#         network.activationFunctionOutput.append(signal)
-#         network.X = signal
-    
-
-#     weightSum = np.dot(network.X, network.weightsFinalNeuron)
-#     weightSum = weightSum + network.biasFinalNeuron
-#     # print(weightSum)
-#     clipped = np.clip(weightSum, -500, 500)
-#     p = 1 /(1 + np.exp(-clipped))
-#     return p
+        # print("shape:", self.layers[-1].activationFunctionOutput.shape)
+        self.Y = np.reshape(self.Y, (-1, 1))
+        # print("Y:", self.Y.shape)
+        delta = self.layers[-1].activationFunctionOutput - self.Y
+        for currentLayer in reversed(self.layers):
+            print("delta:", delta.shape)
+            print("previous A/current x:", currentLayer.inputLayer.T.shape)
+            currentLayer.actualizeWeights(np.dot(currentLayer.inputLayer.T, delta))
 
 def main():
     df = load_data()
@@ -144,15 +134,17 @@ def main():
     X = df.drop(["diagnosis"], axis=1)
     numberVariablesInput = len(X.columns)
     X = X.to_numpy()
-    X = (X - X.mean()) / X.var()
+    X = (X - X.mean()) / X.var() #normalization, we assume that this is the training dataset.
 
+    learningRate = 0.001
+    NumberDataPoints = 569
 
     layers = [Layer("ReLU", 10, 64), Layer("ReLU", 64, 32), Layer("ReLU", 32, 16), Layer("Logistic", 16, 1)]
-    
-    network = neuronalNetwork(numberVariablesInput, X, X, 569, layers) #add the epochs and maybe learning rate.
+    network = neuronalNetwork(numberVariablesInput, X, Y, NumberDataPoints, layers, learningRate) #add the epochs
+    # for i in range(100):
     network.forwardPass()
     network.backpropagation()
-    print(network.layers[-1].activationFunctionOutput)
+    # print(network.layers[-1].activationFunctionOutput)
     return
     
 if __name__ == "__main__":
