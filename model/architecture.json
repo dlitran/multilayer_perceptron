@@ -1,0 +1,21 @@
+{
+    "layer0": {
+        "activationFunction": "ReLU",
+        "numberNeurons": 16
+    },
+    "layer1": {
+        "activationFunction": "ReLU",
+        "numberNeurons": 16
+    },
+    "layer2": {
+        "activationFunction": "ReLU",
+        "numberNeurons": 16
+    },
+    "layer3": {
+        "activationFunction": "Logistic",
+        "numberNeurons": 1
+    },
+    "lossFunction": "binaryCrossEntropy",
+    "numberLayers": 4,
+    "numberInputs": 10
+}

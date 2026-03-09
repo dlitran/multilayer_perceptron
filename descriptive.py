@@ -60,7 +60,7 @@ def main():
     general_description(df)
 
     
-    # create_bar_plot(df)
+    create_bar_plot(df)
     #Scatter plot
     # create_scatter_plot(df)
     #pair plot
