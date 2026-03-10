@@ -25,6 +25,7 @@ def main():
         print("A mode: --training or --prediction must be specified")
         return
     ratioTrainingValidation = 0.7
+    batchSize = 8
     df_training, df_val = load_data(ratioTrainingValidation)
     #TODO balancing the learning rate based on the B/M proportion of the training dataset
     #X, Y, NumberDataPoints = cleanData(df)
@@ -34,10 +35,11 @@ def main():
     elif sys.argv[1] == "--training":
         network = training(df_training, df_val)
         predictValue(network)
-        saveModelHumanReadable(network)
+        #saveModelHumanReadable(network)
     else:
         print("specify a valid mode: --training/--prediction ")
     return
     
 if __name__ == "__main__":
     main()
+    #TODO hacer varias versiones del forward pass. Cuand hay batches, hay que aplicar inmediatamente el backpropagation. Quizás cambiar también las clases.

@@ -73,7 +73,13 @@ def binaryCrossEntropyDerivative(value, prediction):
     return (prediction - value)/(prediction * (1 - prediction) + epsilon)
 
 def categoricalCrossEntropyDerivative(value, prediction):
-    return 0
+    return 0 #TODO look up the actual formula
+
+def evaluatePrediction(prediction, realValue):
+    if abs(prediction - realValue) < 0.5:
+        return True
+    else:
+        return False
 
 class Layer:
     initializeWeightsFunctions = {"ReLU" : initialize_ReLU_layer, "Logistic": xavier_normal_initialization, "Softmax": xavier_normal_initialization}
@@ -93,9 +99,9 @@ class Layer:
         self.deltaCalculus = self.deltaCalculus[activationFunction]
 
         self.activationFunctionOutput = None
-        self.inputLayer = None
+        self.inputCurrentLayer = None
     
-    def actualizeWeights(self, lastDelta) -> np.ndarray:
+    def actualizeWeights(self, lastDelta, batchSize) -> np.ndarray:
 
         dA_dz = self.deltaCalculus(self.activationFunctionOutput)
         # print("lastDelta:", lastDelta.shape)
@@ -104,14 +110,15 @@ class Layer:
         delta = (lastDelta * dA_dz) 
         # print("\033[1;31mdelta = lastDelta * dA_dz =\033[0m", delta.shape)
 
-        dz_dw = self.inputLayer #X
+        dz_dw = self.inputCurrentLayer #X
         # print("dz_dw:", dz_dw.shape)
 
         dL_dw = np.dot((lastDelta * dA_dz).T, dz_dw).T
         # print("\033[1;31mdL_dw = lastDelta * dA_dz * dz_dw =\033[0m", dL_dw.shape)
         tmp_dz_dX = self.weights #X is the previous A.
         # print("dz_dX:", dz_dX.shape)
-        self.weights = self.weights - self.learningRate * (dL_dw) #TODO for now it's hardcoded. It's the numberDataPoints.
+
+        self.weights = self.weights - self.learningRate * (dL_dw /batchSize)
         self.bias = self.bias - self.learningRate * delta.mean(axis=0)
         delta = np.dot(delta, tmp_dz_dX.T) #dz_da
         return delta
@@ -122,7 +129,7 @@ class neuronalNetwork:
     lossFunctinoDerivative_dict = {"MSE" : MSE_derivative, "binaryCrossEntropy": binaryCrossEntropyDerivative, "categoricalCrossEntropy": categoricalCrossEntropyDerivative}
     def __init__(self, df_training, df_val, layers, lossFunction, learningRate=0.01):
         """constructor"""
-        self.X, self.Y, self.numberDataPoints = cleanData(df_training)
+        self.X, self.Y, self.numberDataPointsTrain = cleanData(df_training)
         self.X_val, self.Y_val, self.numberDataPointsVal = cleanData(df_val)
         self.numberInputs = self.X.shape[1]
         self.layers = layers
@@ -132,22 +139,9 @@ class neuronalNetwork:
         self.lossFunction = self.lossFunctions_dict[lossFunction]
         self.lossFunctionDerivative = self.lossFunctinoDerivative_dict[lossFunction]
 
-    def forwardPass(self):
-        #validation dataset
-        input = self.X_val
+    def actualForwardPass(self, input):
         for i, layer in enumerate(self.layers):
-            self.layers[i].inputLayer = input
-            multiplied = multiplication(input, self.layers[i].weights)
-            added = multiplied + self.layers[i].bias
-
-            signal = self.layers[i].activationFunction(added)
-            self.layers[i].activationFunctionOutput = signal
-            input = signal
-        prediction_val = self.layers[-1].activationFunctionOutput
-        #training dataset
-        input = self.X
-        for i, layer in enumerate(self.layers):
-            self.layers[i].inputLayer = input
+            self.layers[i].inputCurrentLayer = input
             multiplied = multiplication(input, self.layers[i].weights)
             added = multiplied + self.layers[i].bias
 
@@ -155,16 +149,49 @@ class neuronalNetwork:
             self.layers[i].activationFunctionOutput = signal
             input = signal
         prediction = self.layers[-1].activationFunctionOutput
+        return prediction
+        
+    def forwardPass(self, validation=True,):
+        #validation dataset
+        if validation is True:
+            prediction_val = self.actualForwardPass(self.X_val)
+        #training dataset
+        #randomized dataset
+        batchSize = 8
+        indices = np.random.permutation(len(self.Y))
+        shuffled_X = self.X[indices]
+        shuffled_Y = self.Y[indices]
+        prediction = np.empty((0,1))
+        # print(self.numberDataPointsTrain)
+        # print(self.numberDataPointsVal)
+        for batch in range(0, self.numberDataPointsTrain, batchSize):
+            #input = batch
+            batch_x = shuffled_X[batch : batch + batchSize]
+            batch_y = shuffled_Y[batch: batch + batchSize]
+            # print("iteration:", batch)
+            for i, layer in enumerate(self.layers):
+                self.layers[i].inputCurrentLayer = batch_x
+                multiplied = multiplication(batch_x, self.layers[i].weights)
+                added = multiplied + self.layers[i].bias
+
+                signal = self.layers[i].activationFunction(added)
+                self.layers[i].activationFunctionOutput = signal
+                batch_x = signal
+            batchPrediction = self.layers[-1].activationFunctionOutput
+            #calculate loss too
+            delta = self.lossFunctionDerivative(batch_y, batchPrediction)
+            prediction = np.vstack((prediction, batchPrediction))
+            self.backpropagation(delta, batchSize)
+            batch += batchSize
+        #average loss and accuracy for batch
+        # print(prediction.shape)
+        reverse_mapping = np.argsort(indices)
+        prediction = prediction[reverse_mapping]
         return prediction, prediction_val
 
-    def backpropagation(self):
-        #TODO add more loss functions
-        #TODO I should use another derivative for the
-        delta = self.lossFunctionDerivative(self.Y, self.layers[-1].activationFunctionOutput) #vector of size numberDatapoints. MSE
-
-        # delta = self.layers[-1].activationFunctionOutput * (1 - self.layers[-1].activationFunctionOutput)
+    def backpropagation(self, delta, batchSize):
         for currentLayer in reversed(self.layers):
-            delta = currentLayer.actualizeWeights(delta)
+            delta = currentLayer.actualizeWeights(delta, batchSize)
             # dz_dX = currentLayer.weights #X is the previous A.
             # # print("dz_dX:", dz_dX.shape)
             # delta = np.dot(delta, dz_dX.T) #dz_da
@@ -187,5 +214,5 @@ def cleanData(df):
     X = X.to_numpy()
     X = (X - X.mean(axis=0)) / X.std(axis=0) #normalization, we assume that this is the training dataset.
 
-    NumberDataPoints = 569
+    NumberDataPoints = Y.shape[0]
     return X, Y, NumberDataPoints

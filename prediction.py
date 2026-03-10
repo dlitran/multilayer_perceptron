@@ -37,12 +37,18 @@ def load_model_human_readable(df_training, df_val):
 #     network = neuronalNetwork(X, Y, NumberDataPoints, layers, lossFunctionName)
 #     return network
 
+def evaluatePrediction(prediction, realValue):
+    if abs(prediction - realValue) < 0.5:
+        return True
+    else:
+        return False
+
 def predictValue(network: neuronalNetwork):
     predictionTrain, predictionVal = network.forwardPass()
     correct = 0
     incorrect = 0
     for prediction, realValue in zip(predictionTrain, network.Y):
-        if abs(prediction - realValue) < 0.5:
+        if evaluatePrediction(prediction, realValue):
             correct += 1
         else:
             incorrect += 1

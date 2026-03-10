@@ -32,11 +32,12 @@ def saveModelHumanReadable(network: neuronalNetwork):
 #     np.savez("./model/parameters.npz", **model_dict)
 #     print("Model saved!")
 
-def load_architecture(numberInputs):
+def load_architecture():
     with open("./model/architecture.json", "r") as file:
         architecture = json.load(file)
     numberLayers = architecture["numberLayers"]
     lossFunctionName = architecture["lossFunction"]
+    numberInputs = architecture["numberInputs"]
     layers = []
     for i in range(numberLayers):
         layers.append(Layer(architecture["layer" + str(i)]["activationFunction"], numberInputs, architecture["layer" + str(i)]["numberNeurons"]))
@@ -53,23 +54,20 @@ def accuracy_plot(accuracyArray, accuracyArrayVal):
     plt.show()
 
 def training(df_training, df_val):
-    learningRate = 0.001
+    learningRate = 0.01
     # layers = [Layer("ReLU", 10, 16), Layer("ReLU", 16, 16), Layer("ReLU", 16, 16), Layer("Logistic", 16, 1)]
     # lossFunctionName = "binaryCrossEntropy"
-    X, Y, NumberDataPoints = cleanData(df_training)
-    #X_val, Y_val, NumberDataPointsVal = cleanData(df_val)
-    numberInputs = X.shape[1] #TODO store numberInputs in the architecture.json file
-    lossFunctionName, layers = load_architecture(numberInputs)
+    lossFunctionName, layers = load_architecture()
 
     network = neuronalNetwork(df_training, df_val, layers, lossFunctionName, learningRate) #add the epochs
     accuracyArray = []
     accuracyArrayVal = []
-    for i in range(80):
+    for i in range(20):
         prediction_train, prediction_val = network.forwardPass()
         if i % 50 == 0:
             print(f"{i}-Error:", ((network.Y - prediction_train)**2).mean())
-        if i % 10 == 0:
-            Layer.learningRate = Layer.learningRate * 0.9995
+        # if i % 10 == 0:
+        #     Layer.learningRate = Layer.learningRate * 0.9995 #learning rate decay
         
         prediction_train = np.clip(prediction_train, epsilon, 1.0 - epsilon)
         prediction_train = network.lossFunction(network.Y, prediction_train).mean()
@@ -79,6 +77,6 @@ def training(df_training, df_val):
         prediction_val = network.lossFunction(network.Y_val, prediction_val).mean()
         accuracyArrayVal.append(prediction_val.mean())
 
-        network.backpropagation()
+        #network.backpropagation()
     accuracy_plot(accuracyArray, accuracyArrayVal)
     return network
