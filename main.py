@@ -19,12 +19,45 @@ def load_data(ratioTrainingValidation) -> pd.DataFrame:
     print(df_training.shape, df_val.shape)
     return df_training, df_val
 
+def validateInput():
+    flag = "--validationRatio"
+    if flag in sys.argv:
+        index = sys.argv.index(flag)
+        if (index + 1) >= len(sys.argv):
+            raise ValueError(f"A value after the {flag} flag must be specified.")
+        if float(sys.argv[index + 1]) <= 0 or float(sys.argv[index + 1]) >= 1:
+            raise ValueError("ratio training-validation must be between 1 and 0")
+        ratioTrainingValidation = float(sys.argv[index + 1])
+    else:
+        ratioTrainingValidation = 0.7
+    flag = "--epochs"
+    if flag in sys.argv:
+        index = sys.argv.index(flag)
+        if (index + 1) >= len(sys.argv):
+            raise ValueError(f"A value after the {flag} flag must be specified.")
+        if float(sys.argv[index + 1]) < 0:
+            raise ValueError("Epoch value must be non-negative")
+        epochs = int(sys.argv[index + 1])
+    else:
+        epochs = 80
+    flag = "--learningRate"
+    if flag in sys.argv:
+        index = sys.argv.index(flag)
+        if (index + 1) >= len(sys.argv):
+            raise ValueError(f"A value after the {flag} flag must be specified.")
+        if float(sys.argv[index + 1]) < 0:
+            raise ValueError("Learning rate value must be non-negative")
+        learningRate = float(sys.argv[index + 1])
+    else:
+        learningRate = 0.01
+    return ratioTrainingValidation, epochs, learningRate
+
 def main():
     np.random.seed(0)
     if len(sys.argv) < 2:
         print("A mode: --training or --prediction must be specified")
         return
-    ratioTrainingValidation = 0.7
+    ratioTrainingValidation, epochs, learningRate = validateInput()
     batchSize = 8
     df_training, df_val = load_data(ratioTrainingValidation)
     #TODO balancing the learning rate based on the B/M proportion of the training dataset
@@ -33,7 +66,7 @@ def main():
         network = load_model_human_readable(df_training, df_val)
         predictValue(network)
     elif sys.argv[1] == "--training":
-        network = training(df_training, df_val)
+        network = training(df_training, df_val, learningRate, epochs)
         predictValue(network)
         #saveModelHumanReadable(network)
     else:
@@ -41,5 +74,8 @@ def main():
     return
     
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"An error occurred: {e}")
     #TODO hacer varias versiones del forward pass. Cuand hay batches, hay que aplicar inmediatamente el backpropagation. Quizás cambiar también las clases.
