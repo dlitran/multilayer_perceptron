@@ -53,17 +53,56 @@ def create_scatter_plot(df):
     
     plt.tight_layout(rect=[0, 0.03, 1, 0.95], h_pad=5.0) #rect[left, bottom, right, top] is the % where the plot begins and ends in the fig box. 0.95 means it just fills the 95% of the box. It allows us to leave space for the title, legend...
     plt.show()
+
+def create_box_plot(df):
+    # Select the 10 real-value parameters
+    dfMean = df[["diagnosis", "radius", "texture", "perimeter", "area", "smoothness", "compacteness", 
+                 "concavity", "concave points", "symmetry", "fractal dimension"]]
+
+    # Use plt.subplots (note the 's' at the end, your previous draft had a typo: plt.subplot)
+    fig, axes = plt.subplots(3, 4, squeeze=True, figsize=(16, 12))
+    flat_axes = axes.flatten()
     
+    # Get unique diagnosis labels (usually 'B' and 'M')
+    diagnoses = dfMean['diagnosis'].unique()
+    features = [col for col in dfMean.columns if col != "diagnosis"]
+    
+    for i, col in enumerate(features):
+        # Separate the data by diagnosis for the current feature
+        data_to_plot = [dfMean[dfMean['diagnosis'] == d][col].dropna() for d in diagnoses]
+        
+        # Create boxplot
+        bplot = flat_axes[i].boxplot(data_to_plot, tick_labels=diagnoses, patch_artist=True)
+        
+        # Match the colors you used in previous plots
+        colors = ['skyblue', 'salmon']
+        for patch, color in zip(bplot['boxes'], colors):
+            patch.set_facecolor(color)
+            
+        flat_axes[i].set_title(f"Outliers in {col}")
+        flat_axes[i].set_ylabel("Value")
+        flat_axes[i].set_xlabel("Diagnosis")
+
+    # Turn off any remaining/unused subplots (since we have 10 features but 12 subplot spaces)
+    for j in range(len(features), len(flat_axes)):
+        flat_axes[j].axis('off')
+
+    fig.suptitle("Boxplots for Outlier Detection (Benign vs Malignant)", fontsize=16)
+    
+    # Layout adjustment to prevent overlapping titles and labels
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95], h_pad=3.0, w_pad=3.0) 
+    plt.show()
 
 def main():
     df = load_data()
     general_description(df)
-
-    
-    create_bar_plot(df)
-    #Scatter plot
+    print(df.isnull().any().any())
+    print(df.duplicated().any())
+    create_box_plot(df)
+    # create_bar_plot(df)
+    # # Scatter plot
     # create_scatter_plot(df)
-    #pair plot
+    # # pair plot
 
 
 if __name__ == '__main__':

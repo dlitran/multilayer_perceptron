@@ -50,25 +50,39 @@ def validateInput():
         learningRate = float(sys.argv[index + 1])
     else:
         learningRate = 0.01
-    return ratioTrainingValidation, epochs, learningRate
+    flag = "--batchSize"
+    if flag in sys.argv:
+        index = sys.argv.index(flag)
+        if (index + 1) >= len(sys.argv):
+            raise ValueError(f"A value after the {flag} flag must be specified.")
+        if int(sys.argv[index + 1]) <= 0:
+            raise ValueError("batch size must equal or greater than 1")
+        batchSize = int(sys.argv[index + 1])
+    else:
+        batchSize = None
+    return ratioTrainingValidation, epochs, learningRate, batchSize
 
 def main():
     np.random.seed(0)
     if len(sys.argv) < 2:
         print("A mode: --training or --prediction must be specified")
         return
-    ratioTrainingValidation, epochs, learningRate = validateInput()
-    batchSize = 8
+    ratioTrainingValidation, epochs, learningRate, batchSize = validateInput()
     df_training, df_val = load_data(ratioTrainingValidation)
+    if batchSize == None:
+        batchSize = df_training.shape[0]
+    elif batchSize > df_training.shape[0]:
+        raise ValueError(f"batch size must equal or smaller than the number of training datapoints ({df_training.shape[0]})")
     #TODO balancing the learning rate based on the B/M proportion of the training dataset
     #X, Y, NumberDataPoints = cleanData(df)
+    print(batchSize)
     if sys.argv[1] == "--prediction":
         network = load_model_human_readable(df_training, df_val)
         predictValue(network)
     elif sys.argv[1] == "--training":
-        network = training(df_training, df_val, learningRate, epochs)
+        network = training(df_training, df_val, learningRate, epochs, batchSize)
         predictValue(network)
-        #saveModelHumanReadable(network)
+        saveModelHumanReadable(network)
     else:
         print("specify a valid mode: --training/--prediction ")
     return

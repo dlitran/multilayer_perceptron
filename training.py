@@ -53,18 +53,18 @@ def accuracy_plot(accuracyArray, accuracyArrayVal):
     ax.legend()
     plt.show()
 
-def training(df_training, df_val, learningRate, epochs):
+def training(df_training, df_val, learningRate, epochs, batchSize):
     # layers = [Layer("ReLU", 10, 16), Layer("ReLU", 16, 16), Layer("ReLU", 16, 16), Layer("Logistic", 16, 1)]
     # lossFunctionName = "binaryCrossEntropy"
     lossFunctionName, layers = load_architecture()
 
-    network = neuronalNetwork(df_training, df_val, layers, lossFunctionName, learningRate) #add the epochs
+    network = neuronalNetwork(df_training, df_val, layers, lossFunctionName, learningRate, batchSize) #add the epochs
     accuracyArray = []
     accuracyArrayVal = []
     for i in range(epochs):
         prediction_train, prediction_val = network.forwardPass()
-        if i % 50 == 0:
-            print(f"{i}-Error:", ((network.Y - prediction_train)**2).mean())
+        if (i + 1) % 20 == 10:
+            print(f"epoch {i + 1}/{epochs} - loss:", network.lossFunction(network.Y, prediction_train).mean(), "- val_loss:", network.lossFunction(network.Y_val, prediction_val).mean())
         # if i % 10 == 0:
         #     Layer.learningRate = Layer.learningRate * 0.9995 #learning rate decay
         

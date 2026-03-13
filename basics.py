@@ -127,13 +127,14 @@ class neuronalNetwork:
     """docstring"""
     lossFunctions_dict = {"MSE" : MSE, "binaryCrossEntropy": binaryCrossEntropy, "categoricalCrossEntropy": categoricalCrossEntropy}
     lossFunctinoDerivative_dict = {"MSE" : MSE_derivative, "binaryCrossEntropy": binaryCrossEntropyDerivative, "categoricalCrossEntropy": categoricalCrossEntropyDerivative}
-    def __init__(self, df_training, df_val, layers, lossFunction, learningRate=0.01):
+    def __init__(self, df_training, df_val, layers, lossFunction, learningRate, batchSize):
         """constructor"""
         self.X, self.Y, self.numberDataPointsTrain = cleanData(df_training)
         self.X_val, self.Y_val, self.numberDataPointsVal = cleanData(df_val)
         self.numberInputs = self.X.shape[1]
         self.layers = layers
         Layer.learningRate = learningRate
+        self.batchSize = batchSize
 
         self.lossFunctionName = lossFunction
         self.lossFunction = self.lossFunctions_dict[lossFunction]
@@ -151,23 +152,23 @@ class neuronalNetwork:
         prediction = self.layers[-1].activationFunctionOutput
         return prediction
         
-    def forwardPass(self, validation=True,):
+    def forwardPass(self, validation=True):
         #validation dataset
         if validation is True:
             prediction_val = self.actualForwardPass(self.X_val)
         #training dataset
         #randomized dataset
-        batchSize = 8
+        batchSize = len(self.Y)
         indices = np.random.permutation(len(self.Y))
         shuffled_X = self.X[indices]
         shuffled_Y = self.Y[indices]
         prediction = np.empty((0,1))
         # print(self.numberDataPointsTrain)
         # print(self.numberDataPointsVal)
-        for batch in range(0, self.numberDataPointsTrain, batchSize):
+        for batch in range(0, self.numberDataPointsTrain, self.batchSize):
             #input = batch
-            batch_x = shuffled_X[batch : batch + batchSize]
-            batch_y = shuffled_Y[batch: batch + batchSize]
+            batch_x = shuffled_X[batch : batch + self.batchSize]
+            batch_y = shuffled_Y[batch: batch + self.batchSize]
             # print("iteration:", batch)
             for i, layer in enumerate(self.layers):
                 self.layers[i].inputCurrentLayer = batch_x
@@ -182,7 +183,7 @@ class neuronalNetwork:
             delta = self.lossFunctionDerivative(batch_y, batchPrediction)
             prediction = np.vstack((prediction, batchPrediction))
             self.backpropagation(delta, batchSize)
-            batch += batchSize
+            #batch += self.batchSize
         #average loss and accuracy for batch
         # print(prediction.shape)
         reverse_mapping = np.argsort(indices)
