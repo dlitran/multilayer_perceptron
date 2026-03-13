@@ -1,55 +1,48 @@
 # Multilayer Perceptron 🧠
 
-This project features the from-scratch implementation of a multilayer perceptron to classify breast cancer cells as malignant or benign. It is part of the programming curriculum at 42 Barcelona.
-
-**Status:** 🚧 Work in Progress (Core training, prediction, and batch processing functionalities are operational).
+[cite_start]This repository contains a custom-built Artificial Neural Network (Multilayer Perceptron) designed to classify breast cancer tumors as malignant or benign[cite: 13]. [cite_start]Developed as part of the 42 Barcelona core curriculum, this project focuses on understanding the underlying math and logic of machine learning by building the core algorithms completely from scratch[cite: 91, 98, 99].
 
 ## Features
 
-* **From-Scratch Implementation:** No machine learning libraries were used for the underlying algorithms; you must code everything from scratch. The gradient descent and backpropagation are completely custom-built.
-* **Customizable Architecture:** Neural network topology (layers, neurons, activation functions, and loss functions) is completely modular and driven by an `architecture.json` file.
-* **Mini-Batch Gradient Descent:** Fully supports dynamic batch sizing for forward and backward passes, allowing for optimized and iterative weight updates during training.
-* **Visual Evaluation:** Automatically generates a Loss vs. Epoch plot at the end of the training phase to evaluate model performance and robustly determine accuracy on unknown examples.
-* **Data Splitting:** Dynamically splits the dataset into training and validation sets based on user-defined ratios.
+* [cite_start]**Built from Scratch:** No machine learning frameworks (like TensorFlow or PyTorch) were used[cite: 98]. [cite_start]The forward pass, backpropagation, and gradient descent algorithms were implemented entirely by hand using fundamental math[cite: 98, 99, 193].
+* **Customizable Architecture:** The network's topology—including the number of layers, neurons per layer, activation functions, and loss functions—is completely modular and defined via a local `./model/architecture.json` file.
+* **Mini-Batch Gradient Descent:** Supports dynamic batch sizing for optimized, iterative weight updates during training.
+* [cite_start]**Data Splitting:** Automatically splits the dataset into training and validation sets based on user-defined ratios to test the model's accuracy on unknown examples[cite: 125, 147].
+* [cite_start]**Visual Evaluation:** Generates a Loss vs. Epoch plot using Matplotlib at the end of the training phase to easily evaluate the model's learning curve[cite: 148].
 
 ## The Dataset
 
-The model trains on a breast cancer dataset, predicting a diagnosis of either `M` (Malignant) or `B` (Benign). The features of the dataset describe various characteristics of cell nuclei. Variables include radius, texture, perimeter, area, smoothness, and more.
+[cite_start]The model trains on the Wisconsin Breast Cancer dataset[cite: 13]. [cite_start]It analyzes features describing the characteristics of cell nuclei (such as radius, texture, perimeter, area, and smoothness) to predict a diagnosis label of either `M` (Malignant) or `B` (Benign)[cite: 119, 120, 121].
 
-## Requirements
+## Tech Stack
 
-The project relies strictly on foundational Python libraries for math, data manipulation, and visualization:
-* `numpy` (for linear algebra operations)
-* `pandas` (for CSV data loading and manipulation)
-* `matplotlib` (for displaying the learning curves)
-
-## Project Structure
-
-* `main.py`: The entry point for the program, handling arguments and routing to training or prediction modes.
-* `./model/architecture.json`: Configuration file specifying the network topology (number of layers, nodes per layer, activation functions, etc.).
-* `./model/parameters.json`: Storage file for the learned weights and biases after a successful training run.
+The project relies strictly on foundational Python libraries:
+* **NumPy:** For matrix operations and linear algebra.
+* **Pandas:** For loading and manipulating the CSV dataset.
+* [cite_start]**Matplotlib:** For rendering the learning curves[cite: 99].
 
 ## Usage
 
-The program is executed via `main.py` and requires specifying the operational mode (`--training` or `--prediction`).
+The main interface is run through `main.py` and requires specifying the operational mode (`--training` or `--prediction`).
 
 ### Command Line Arguments
 
 * `--training` / `--prediction`: **(Mandatory)** Defines the execution mode. 
-* `--epochs <int>`: Number of training iterations. Default is `80`.
-* `--learningRate <float>`: The step size for gradient descent. Default is `0.01`.
-* `--validationRatio <float>`: The proportion of data used for training (between 0 and 1). Default is `0.7`.
-* `--batchSize <int>`: The number of datapoints used in one forward/backward pass. Defaults to the full size of the training dataset.
+* `--epochs <int>`: Number of training iterations over the dataset (Default: `80`).
+* `--learningRate <float>`: The step size for the gradient descent (Default: `0.01`).
+* `--validationRatio <float>`: The proportion of data used for training vs. validation, between 0 and 1 (Default: `0.7`).
+* `--batchSize <int>`: The number of datapoints processed in one forward/backward pass (Default: Full dataset).
 
 ### Examples
 
 **Training the model:**
 ```bash
 python3 main.py --training --epochs 70 --learningRate 0.5 --validationRatio 0.8
+```
 
 **Running predictions:**
-(Note: Requires a previously trained model saved in the ./model/ directory)
+(Note: This mode loads the learned weights and biases from the ./model/parameters.json file generated during training.)
 
-
-```Bash
+```bash
 python3 main.py --prediction
+```
