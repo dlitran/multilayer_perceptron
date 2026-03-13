@@ -30,8 +30,9 @@ def derivative_ReLU(x: float) -> float:
 def derivative_Logistic(p: float) -> float:
     return p * (1 - p)
 
-def derivative_Softmax():
-    return
+def derivative_Softmax(values):
+    
+    return 
 
 #layer initializations
 def initialize_ReLU_layer(numberInputs: int, numberOutputs: int) -> np.ndarray:
