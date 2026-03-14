@@ -43,7 +43,7 @@ The main interface is run through `main.py` and requires specifying the operatio
 
 **Training the model:**
 ```bash
-python3 main.py --training --epochs 70 --learningRate 0.5 --validationRatio 0.8
+python3 main.py --training --epochs 70 --learningRate 0.5 --validationRatio 0.8 --batchSize 455
 ```
 
 ## Results:
