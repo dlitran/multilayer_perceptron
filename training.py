@@ -58,7 +58,8 @@ def accuracy_plot(lossArray, lossArrayVal, accuracyArray, accuracyArrayVal):
     ax[1].set_ylabel("Accuracy (%)")
     ax[1].legend()
     ax[1].set_ylim(60, 100)
-    fig.suptitle("Learning curve")
+    fig.canvas.manager.set_window_title("Learning Curve")
+    plt.savefig("./results/learningcurve.png")
     plt.show()
 
 def training(df_training, df_val, learningRate, epochs, batchSize):

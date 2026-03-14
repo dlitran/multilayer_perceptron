@@ -44,3 +44,9 @@ The main interface is run through `main.py` and requires specifying the operatio
 **Training the model:**
 ```bash
 python3 main.py --training --epochs 70 --learningRate 0.5 --validationRatio 0.8
+
+**Results:**
+
+During the training phase, the program evaluates the model's performance on both the training and validation datasets. At the end of the process, it generates its learning curves to visualize the gradient descent (loss and accuracy - epochs):
+
+![Training and Validation Loss](./assets/loss_curve.png)
