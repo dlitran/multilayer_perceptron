@@ -44,13 +44,21 @@ def load_architecture():
         numberInputs = architecture["layer" + str(i)]["numberNeurons"]
     return lossFunctionName, layers
 
-def accuracy_plot(accuracyArray, accuracyArrayVal):
-    fig, ax =  plt.subplots()
-    ax.plot(range(len(accuracyArray)), accuracyArray, label="training")
-    ax.plot(range(len(accuracyArrayVal)), accuracyArrayVal, label="validation")
-    ax.set_xlabel("Epochs")
-    ax.set_ylabel("Loss (Binary Cross Entropy)")
-    ax.legend()
+def accuracy_plot(lossArray, lossArrayVal, accuracyArray, accuracyArrayVal):
+    fig, ax =  plt.subplots(1, 2, squeeze=True, figsize=(10, 4))
+    ax[0].plot(range(len(lossArray)), lossArray, label="training")
+    ax[0].plot(range(len(lossArrayVal)), lossArrayVal, label="validation")
+    ax[0].set_xlabel("Epochs")
+    ax[0].set_ylabel("Loss (Binary Cross Entropy)")
+    ax[0].legend()
+
+    ax[1].plot(range(len(accuracyArray)), accuracyArray, label="training")
+    ax[1].plot(range(len(accuracyArrayVal)), accuracyArrayVal, label="validation")
+    ax[1].set_xlabel("Epochs")
+    ax[1].set_ylabel("Accuracy (%)")
+    ax[1].legend()
+    ax[1].set_ylim(60, 100)
+    fig.suptitle("Learning curve")
     plt.show()
 
 def training(df_training, df_val, learningRate, epochs, batchSize):
@@ -59,6 +67,8 @@ def training(df_training, df_val, learningRate, epochs, batchSize):
     lossFunctionName, layers = load_architecture()
 
     network = neuronalNetwork(df_training, df_val, layers, lossFunctionName, learningRate, batchSize) #add the epochs
+    lossArray = []
+    lossArrayVal = []
     accuracyArray = []
     accuracyArrayVal = []
     for i in range(epochs):
@@ -69,13 +79,17 @@ def training(df_training, df_val, learningRate, epochs, batchSize):
         #     Layer.learningRate = Layer.learningRate * 0.9995 #learning rate decay
         
         prediction_train = np.clip(prediction_train, epsilon, 1.0 - epsilon)
-        prediction_train = network.lossFunction(network.Y, prediction_train).mean()
-        accuracyArray.append(prediction_train.mean())
+        lossArray.append(network.lossFunction(network.Y, prediction_train).mean())
 
         prediction_val = np.clip(prediction_val, epsilon, 1.0 - epsilon)
-        prediction_val = network.lossFunction(network.Y_val, prediction_val).mean()
-        accuracyArrayVal.append(prediction_val.mean())
+        lossArrayVal.append(network.lossFunction(network.Y_val, prediction_val).mean())
 
+
+        vectorizedPredictionEvaluation = np.vectorize(evaluatePrediction)
+        accuracyArray.append((vectorizedPredictionEvaluation(network.Y, prediction_train)).mean() * 100)
+        accuracyArrayVal.append((vectorizedPredictionEvaluation(network.Y_val, prediction_val)).mean() * 100)
         #network.backpropagation()
-    accuracy_plot(accuracyArray, accuracyArrayVal)
+    # print(prediction_train)
+    #print(vectorizedPredictionEvaluation(network.Y, prediction_train))
+    accuracy_plot(lossArray, lossArrayVal, accuracyArray, accuracyArrayVal)
     return network

@@ -76,7 +76,7 @@ def binaryCrossEntropyDerivative(value, prediction):
 def categoricalCrossEntropyDerivative(value, prediction):
     return 0 #TODO look up the actual formula
 
-def evaluatePrediction(prediction, realValue):
+def evaluatePrediction(realValue, prediction):
     if abs(prediction - realValue) < 0.5:
         return True
     else:
