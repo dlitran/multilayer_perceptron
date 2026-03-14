@@ -1,14 +1,14 @@
-# Multilayer Perceptron 🧠
+# Multilayer Perceptron
 
 This repository contains a custom-built Artificial Neural Network (Multilayer Perceptron) designed to classify breast cancer tumors as malignant or benign. Developed as part of the 42 Barcelona core curriculum, this project focuses on understanding the underlying math and logic of machine learning by building the core algorithms completely from scratch.
 
 ## Features
 
 * **Built from Scratch:** No machine learning frameworks (like TensorFlow or PyTorch) were used. The forward pass, backpropagation, and gradient descent algorithms were implemented entirely by hand using fundamental math.
-* **Customizable Architecture:** The network's topology—including the number of layers, neurons per layer, activation functions, and loss functions—is completely modular and defined via a local `./model/architecture.json` file.
+* **Customizable Architecture:** The network's topology, including the number of layers, neurons per layer, activation functions, and loss functions, is completely modular and defined via a local `./model/architecture.json` file.
 * **Mini-Batch Gradient Descent:** Supports dynamic batch sizing for optimized, iterative weight updates during training.
 * **Data Splitting:** Automatically splits the dataset into training and validation sets based on user-defined ratios to test the model's accuracy on unknown examples.
-* **Visual Evaluation:** Generates a Loss vs. Epoch plot using Matplotlib at the end of the training phase to easily evaluate the model's learning curve.
+* **Visual Evaluation:** Generates a Loss/Accuracy vs. Epoch plot using Matplotlib at the end of the training phase to easily evaluate the model's learning curve.
 
 ## The Dataset
 
