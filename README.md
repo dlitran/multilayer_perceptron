@@ -35,7 +35,7 @@ The main interface is run through `main.py` and requires specifying the operatio
 
 * `--training` / `--prediction`: **(Mandatory)** Defines the execution mode. 
 * `--epochs <int>`: Number of training iterations over the dataset (Default: `80`).
-* `--learningRate <float>`: The step size for the gradient descent (Default: `0.01`).
+* `--learningRate <float>`: The step size for the gradient descent (Default: `0.5`).
 * `--validationRatio <float>`: The proportion of data used for training vs. validation, between 0 and 1 (Default: `0.7`).
 * `--batchSize <int>`: The number of datapoints processed in one forward/backward pass (Default: Full dataset).
 
