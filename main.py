@@ -49,7 +49,7 @@ def validateInput():
             raise ValueError("Learning rate value must be non-negative")
         learningRate = float(sys.argv[index + 1])
     else:
-        learningRate = 0.01
+        learningRate = 0.5
     flag = "--batchSize"
     if flag in sys.argv:
         index = sys.argv.index(flag)
