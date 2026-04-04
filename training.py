@@ -85,12 +85,12 @@ def training(df_training, df_val, learningRate, epochs, batchSize):
         prediction_val = np.clip(prediction_val, epsilon, 1.0 - epsilon)
         lossArrayVal.append(network.lossFunction(network.Y_val, prediction_val).mean())
 
-
-        vectorizedPredictionEvaluation = np.vectorize(evaluatePrediction)
-        accuracyArray.append((vectorizedPredictionEvaluation(network.Y, prediction_train)).mean() * 100)
-        accuracyArrayVal.append((vectorizedPredictionEvaluation(network.Y_val, prediction_val)).mean() * 100)
+        accuracyArray.append((evaluatePredictionSoftmax(network.Y, prediction_train)).mean() * 100)
+        accuracyArrayVal.append((evaluatePredictionSoftmax(network.Y_val, prediction_val)).mean() * 100)
         #network.backpropagation()
     # print(prediction_train)
-    #print(vectorizedPredictionEvaluation(network.Y, prediction_train))
+    # print(evaluatePredictionSoftmax(network.Y, prediction_train))
+    # print(accuracyArray)
+    # print(accuracyArrayVal)
     accuracy_plot(lossArray, lossArrayVal, accuracyArray, accuracyArrayVal)
     return network

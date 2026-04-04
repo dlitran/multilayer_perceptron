@@ -67,6 +67,8 @@ def main():
     if len(sys.argv) < 2:
         print("A mode: --training or --prediction must be specified")
         return
+    # derivative_Softmax(np.array([1, 2, 3]))
+    # return
     ratioTrainingValidation, epochs, learningRate, batchSize = validateInput()
     df_training, df_val = load_data(ratioTrainingValidation)
     if batchSize == None:
@@ -81,6 +83,8 @@ def main():
         predictValue(network)
     elif sys.argv[1] == "--training":
         network = training(df_training, df_val, learningRate, epochs, batchSize)
+        return
+        #TODO mirar por qué falla.
         predictValue(network)
         saveModelHumanReadable(network)
     else:

@@ -21,7 +21,8 @@ def logistic(weightSum: float) -> float:
 
 def softmax(values):
     shifted_values = values - max(values) #avoid overflow
-    return np.exp(shifted_values) / np.exp(shifted_values).sum()
+    result = np.exp(shifted_values) / np.exp(shifted_values).sum()
+    return result
 
 #Derivatives dA_dz (for delta calculus)
 def derivative_ReLU(x: float) -> float:
@@ -34,8 +35,13 @@ def derivative_Logistic(p: float) -> float:
     return p * (1 - p)
 
 def derivative_Softmax(values):
-    
-    return 
+    result = np.ndarray(shape=[len(values), len(values)])
+    for (i, j), value in np.ndenumerate(result):
+        if i == j:
+            result[i, j] = values[i] * (1 - values[i])
+        else:
+            result[i, j] = - values[i] * values[j]
+    return result
 
 #layer initializations
 def initialize_ReLU_layer(numberInputs: int, numberOutputs: int) -> np.ndarray:
@@ -66,7 +72,12 @@ def binaryCrossEntropy(value, prediction):
     return -( value * np.log(prediction) + (1 - value) * np.log(1 - prediction))
 
 def categoricalCrossEntropy(values, prediction):
-    return -(( values * np.log(prediction)).sum())
+    result  = 0
+    
+    result += -( values * np.log(prediction[:, 0:1]))
+    opposite_values = 1 - values
+    result += -( opposite_values * np.log(prediction[:, 1:2]))
+    return result
 
 
 #Loss function derivatives
@@ -77,18 +88,31 @@ def binaryCrossEntropyDerivative(value, prediction):
     return (prediction - value)/(prediction * (1 - prediction) + epsilon)
 
 def categoricalCrossEntropyDerivative(value, prediction):
-    return 0 #TODO look up the actual formula
+    opposite_value = 1 - value
+    result0 = - value / (prediction[:, 0:1] + epsilon)
+    result1 = - opposite_value / (prediction[:, 1:2]  + epsilon)
+    result = np.hstack((result0, result1))
+    return  result #TODO look up the actual formula
 
 def evaluatePrediction(realValue, prediction):
     if abs(prediction - realValue) < 0.5:
         return True
     else:
         return False
+    
+def evaluatePredictionSoftmax(realValue, prediction):
+    # print(prediction.shape)
+    firstElementPrediction = prediction[:, 0:1]
+    result = firstElementPrediction - realValue < 0.5
+    # if len(result) == sum(1 for x in result if x == True):
+        # print("100% accuracy.")
+    
+    return result
 
 class Layer:
     initializeWeightsFunctions = {"ReLU" : initialize_ReLU_layer, "Logistic": xavier_normal_initialization, "Softmax": xavier_normal_initialization}
-    activationFunctions = {"ReLU" : np.vectorize(ReLU), "Logistic" : np.vectorize(logistic), "Softmax": softmax}
-    deltaCalculus = {"ReLU" : np.vectorize(derivative_ReLU), "Logistic" : np.vectorize(derivative_Logistic), "Softmax": derivative_Softmax}
+    activationFunctions = {"ReLU" : np.vectorize(ReLU), "Logistic" : np.vectorize(logistic), "Softmax": np.vectorize(softmax, signature='(n)->(n)')}
+    deltaCalculus = {"ReLU" : np.vectorize(derivative_ReLU), "Logistic" : np.vectorize(derivative_Logistic), "Softmax": np.vectorize(derivative_Softmax, signature='(n)->(n, n)')}
     learningRate = None
 
     def __init__(self, activationFunction, numberInputs, numberOutputs):
@@ -108,17 +132,20 @@ class Layer:
     def actualizeWeights(self, lastDelta, batchSize) -> np.ndarray:
 
         dA_dz = self.deltaCalculus(self.activationFunctionOutput)
-        # print("lastDelta:", lastDelta.shape)
-        # print("dA_dz:", dA_dz.shape)
-   
-        delta = (lastDelta * dA_dz) 
-        # print("\033[1;31mdelta = lastDelta * dA_dz =\033[0m", delta.shape)
-
+        print("lastDelta:", lastDelta.shape)
+        print("dA_dz:", dA_dz.shape)
+        #print(dA_dz)
+        #print(len(lastDelta.shape))
+        if len(dA_dz.shape) == 3:
+            delta = np.einsum('ij, ijk->ik', lastDelta, dA_dz)
+        else:
+            delta = (lastDelta * dA_dz) 
+        print("\033[1;31mdelta = lastDelta * dA_dz =\033[0m", delta.shape)
         dz_dw = self.inputCurrentLayer #X
-        # print("dz_dw:", dz_dw.shape)
+        print("dz_dw:", dz_dw.shape)
 
-        dL_dw = np.dot((lastDelta * dA_dz).T, dz_dw).T
-        # print("\033[1;31mdL_dw = lastDelta * dA_dz * dz_dw =\033[0m", dL_dw.shape)
+        dL_dw = np.dot((delta).T, dz_dw).T
+        print("\033[1;31mdL_dw = lastDelta * dA_dz * dz_dw =\033[0m", dL_dw.shape)
         tmp_dz_dX = self.weights #X is the previous A.
         # print("dz_dX:", dz_dX.shape)
 
@@ -149,8 +176,9 @@ class neuronalNetwork:
             self.layers[i].inputCurrentLayer = input
             multiplied = multiplication(input, self.layers[i].weights)
             added = multiplied + self.layers[i].bias
-
             signal = self.layers[i].activationFunction(added)
+            # if layer.activationFunctionName == "Softmax":
+            #     print("DONE")
             self.layers[i].activationFunctionOutput = signal
             input = signal
         prediction = self.layers[-1].activationFunctionOutput
@@ -166,7 +194,10 @@ class neuronalNetwork:
         indices = np.random.permutation(len(self.Y))
         shuffled_X = self.X[indices]
         shuffled_Y = self.Y[indices]
-        prediction = np.empty((0,1))
+        if self.lossFunctionName == "categoricalCrossEntropy":
+            prediction = np.empty((0,2)) #HARDCODED
+        else:
+            prediction = np.empty((0, 1))
         # print(self.numberDataPointsTrain)
         # print(self.numberDataPointsVal)
         for batch in range(0, self.numberDataPointsTrain, self.batchSize):
@@ -184,7 +215,10 @@ class neuronalNetwork:
                 batch_x = signal
             batchPrediction = self.layers[-1].activationFunctionOutput
             #calculate loss too
+            # print("Inputs loss functino:", batch_y, batchPrediction)
             delta = self.lossFunctionDerivative(batch_y, batchPrediction)
+            print("The shape: ", delta.shape)
+            #print(delta)
             prediction = np.vstack((prediction, batchPrediction))
             self.backpropagation(delta, batchSize)
             #batch += self.batchSize
@@ -197,6 +231,7 @@ class neuronalNetwork:
     def backpropagation(self, delta, batchSize):
         for currentLayer in reversed(self.layers):
             delta = currentLayer.actualizeWeights(delta, batchSize)
+            # return
             # dz_dX = currentLayer.weights #X is the previous A.
             # # print("dz_dX:", dz_dX.shape)
             # delta = np.dot(delta, dz_dX.T) #dz_da

@@ -16,5 +16,6 @@
         "numberNeurons": 1
     },
     "lossFunction": "binaryCrossEntropy",
-    "numberLayers": 4
+    "numberLayers": 4,
+    "numberInputs": 10
 }
